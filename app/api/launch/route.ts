@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const DEFAULT_PROXY_BASE_URL = "http://43.201.126.117:8080";
+const DEFAULT_PROXY_BASE_URL = "http://43.203.84.169:8080";
 
 export async function POST(request: NextRequest) {
   const authorization = request.headers.get("authorization");
