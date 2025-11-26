@@ -22,10 +22,28 @@ export default function SuccessPage() {
 
       const accessToken = data.session.access_token;
 
-      // 2️⃣ Access Token 저장
+      // 2️⃣ 로그인한 사용자 uuid 가져오기
+      const userId = data.session.user.id; // Supabase Auth에서 제공하는 UUID
+
+      // 3️⃣ proxy_sessions 테이블에 저장
+      const { error: insertError } = await supabase
+        .from("proxy_sessions")
+        .insert([
+          {
+            uid: userId,
+            session_id: null,
+            status: "inactive",
+          },
+        ]);
+
+      if (insertError) {
+        throw new Error("proxy_sessions 테이블에 저장하는 데 실패했습니다.");
+      }
+
+      // 4️⃣ Access Token 저장
       localStorage.setItem("access_token", accessToken);
 
-      // 3️⃣ Launch API 호출
+      // 5️⃣ Launch API 호출
       const response = await fetch("/api/launch", {
         method: "POST",
         headers: {
@@ -40,22 +58,27 @@ export default function SuccessPage() {
         );
       }
 
-      const result = await response.json();
+      await response.json();
 
       setMessage(
         "세션이 준비되었습니다.\n2분 후 서비스가 자동으로 시작됩니다."
       );
-
-      // 4️⃣ 2분 기다렸다가 이동
-      setTimeout(() => {
-        window.location.href = "http://localhost:3001";
-      }, 120000); // 120초
     } catch (err) {
       const error =
         err instanceof Error ? err.message : "알 수 없는 오류가 발생했습니다.";
       setMessage(error);
     } finally {
       setIsLoading(false);
+
+      setTimeout(() => {
+        const token = localStorage.getItem("access_token");
+        const redirectUrl = token
+          ? `http://localhost:3001/terminal?access_token=${encodeURIComponent(
+              token
+            )}`
+          : "http://localhost:3001/terminal";
+        window.location.href = redirectUrl;
+      }, 1200);
     }
   };
 
